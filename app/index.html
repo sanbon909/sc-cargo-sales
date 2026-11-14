@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.uexcorp.uk; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:">
+<title>SC Cargo Sales</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <div class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M3 7l9-4 9 4v10l-9 4-9-4V7zm9-1.8L5.6 8 12 10.8 18.4 8 12 5.2zM5 9.6v6.1l6 2.7v-6.1L5 9.6zm8 8.8l6-2.7V9.6l-6 2.7v6.1z"/></svg>
+    </div>
+    <div>
+      <h1>SC Cargo Sales</h1>
+      <p class="sub">Where can I sell this?</p>
+    </div>
+  </div>
+  <div class="status">
+    <span id="status-text" class="muted">Loading data…</span>
+    <button id="refresh" class="btn" title="Download the latest data from UEX">
+      <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M17.65 6.35A7.95 7.95 0 0012 4a8 8 0 108 8h-2a6 6 0 11-1.76-4.24L13 11h7V4l-2.35 2.35z"/></svg>
+      Refresh
+    </button>
+  </div>
+</header>
+
+<main>
+  <section class="search-wrap">
+    <div class="search">
+      <svg class="search-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M15.5 14h-.8l-.3-.3A6.5 6.5 0 109.5 16a6.5 6.5 0 004.2-1.6l.3.3v.8l5 5 1.5-1.5-5-5zm-6 0A4.5 4.5 0 1114 9.5 4.5 4.5 0 019.5 14z"/></svg>
+      <input id="q" type="text" placeholder="Type a commodity, e.g. Laranite, Quantanium, Medical Supplies" autocomplete="off" spellcheck="false" disabled>
+      <button id="clear" class="clear" title="Clear" hidden>&times;</button>
+      <ul id="suggest" class="suggest" role="listbox" hidden></ul>
+    </div>
+  </section>
+
+  <section id="result" class="result" hidden>
+    <div class="result-head">
+      <div>
+        <div class="title-row">
+          <h2 id="c-name"></h2>
+          <div id="mode" class="seg" role="group" aria-label="Sell or buy">
+            <button data-mode="sell" class="on">Sell</button>
+            <button data-mode="buy">Buy</button>
+          </div>
+        </div>
+        <p id="c-meta" class="muted"></p>
+      </div>
+      <div class="filters">
+        <label class="box-pick">My box
+          <select id="box">
+            <option value="0">Any size</option>
+            <option value="1">1 SCU</option><option value="2">2 SCU</option><option value="4">4 SCU</option>
+            <option value="8">8 SCU</option><option value="16">16 SCU</option><option value="24">24 SCU</option>
+            <option value="32">32 SCU</option>
+          </select>
+        </label>
+        <div id="systems" class="chips"></div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-key="location">Location</th>
+            <th data-key="body">Planet / Moon</th>
+            <th data-key="system">System</th>
+            <th data-key="price" class="num sorted desc" title="Latest reported sell price per SCU">Price / SCU</th>
+            <th data-key="level">Demand</th>
+            <th data-key="scu" class="num">Sell up to</th>
+            <th data-key="maxBox">Box sizes (SCU)</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="empty" class="empty">
+    <p>Start typing a commodity name above to see every place you can sell it.</p>
+  </section>
+</main>
+
+<footer class="foot muted">
+  Data from <a href="https://uexcorp.space" target="_blank">uexcorp.space</a>, reported by the community. Prices, demand and stock reflect the latest reports and can change in game.
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
