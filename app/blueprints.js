@@ -263,8 +263,43 @@
     return a + (z - a) * (qq - lo) / (hi - lo);
   }
 
+  // The live API nests the list as detail.aspects.aspects; older/other shapes may give a plain array.
+  // If neither is there, build the same list from requirement_groups (group modifiers apply to their materials).
+  function aspectsFrom(d) {
+    if (!d) return [];
+    const raw = Array.isArray(d.aspects) ? d.aspects : (d.aspects && Array.isArray(d.aspects.aspects) ? d.aspects.aspects : null);
+    if (raw && raw.length) return raw.filter((a) => a && a.input);
+    const out = [];
+    const walk = (nodes, inherited, name, sel) => {
+      for (const n of nodes || []) {
+        const mods = [...inherited, ...(Array.isArray(n.modifiers) ? n.modifiers : [])];
+        if (n.kind === 'group' || (n.children && n.children.length)) {
+          const kids = n.children || [];
+          const req = n.required_count || kids.length;
+          const nextSel = kids.length > 1 && req < kids.length
+            ? { key: n.key || n.name || `g${out.length}`, name: n.name, required_count: req, option_count: kids.length } : sel;
+          walk(kids, mods, n.name || name, nextSel);
+        } else {
+          let lo = Math.max(0, n.min_quality || 0), hi = 1000;
+          for (const m of mods) {
+            if (m.quality_range && m.quality_range.min != null) lo = Math.max(lo, m.quality_range.min);
+            if (m.quality_range && m.quality_range.max != null) hi = Math.max(lo, m.quality_range.max);
+          }
+          out.push({
+            name: name || n.name, selection_group: sel, modifiers: mods,
+            input: { kind: n.kind, name: n.name, quantity: n.quantity, quantity_scu: n.quantity_scu, min_quality: n.min_quality || 0 },
+            slider_min: lo, slider_max: hi, initial_quality: Math.min(Math.max(500, lo), hi),
+            is_selected: !sel || out.filter((a) => a.selection_group && a.selection_group.key === sel.key).length < sel.required_count
+          });
+        }
+      }
+    };
+    walk(d.requirement_groups, [], '', null);
+    return out;
+  }
+
   function setupTune() {
-    const aspects = (detail && Array.isArray(detail.aspects) ? detail.aspects : []).filter((a) => a && a.input);
+    const aspects = aspectsFrom(detail);
     if (tune && tune.uuid === current.uuid && tune.detail === detail) return;
     const groups = new Map();
     aspects.forEach((a, i) => {
