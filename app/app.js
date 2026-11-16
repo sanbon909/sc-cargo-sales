@@ -107,11 +107,20 @@ function buildDb(commodities, prices, terminals, updated) {
   return { commodities: list, sell: maps.sell, buy: maps.buy, updated };
 }
 
-function setStatus(text, busy) {
+// The header status line and Refresh button belong to whichever tab is open.
+let activeTab = 'cargo';
+const tabStatus = { cargo: ['Loading data…', true], blueprints: ['', false] };
+function paintStatus() {
+  const [text, busy] = tabStatus[activeTab];
   els.status.textContent = text;
   els.refresh.disabled = !!busy;
   els.refresh.classList.toggle('spin', !!busy);
 }
+function setTabStatus(tab, text, busy) {
+  tabStatus[tab] = [text, !!busy];
+  if (tab === activeTab) paintStatus();
+}
+function setStatus(text, busy) { setTabStatus('cargo', text, busy); }
 
 function timeAgo(ts) {
   if (!ts) return '';
@@ -151,8 +160,9 @@ async function load() {
     }
   }
   if (db) {
+    window.cargo.onReady.forEach((fn) => fn());
     els.q.disabled = false;
-    els.q.focus();
+    if (activeTab === 'cargo') els.q.focus();
     if (current) select(db.commodities.find((c) => c.id === current.id) || null);
     else if (!els.q.value) showEmpty('Start typing a commodity name above to see every place you can sell it.');
   }
@@ -328,7 +338,52 @@ document.querySelector('thead').addEventListener('click', (e) => {
   sort = sort.key === key ? { key, dir: -sort.dir } : { key, dir: key === 'price' ? MODES[mode].defaultSort : ['level', 'scu', 'maxBox'].includes(key) ? -1 : 1 };
   if (current) renderResult();
 });
-els.refresh.addEventListener('click', load);
+els.refresh.addEventListener('click', () => {
+  if (activeTab === 'blueprints') window.bpLoad && window.bpLoad();
+  else load();
+});
+
+// ---------- tabs ----------
+const SUBTITLES = { blueprints: 'What does it take to craft this?' };
+function showTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.tabs button').forEach((b) => {
+    b.classList.toggle('on', b.dataset.tab === tab);
+    b.setAttribute('aria-selected', b.dataset.tab === tab);
+  });
+  $('view-cargo').hidden = tab !== 'cargo';
+  $('view-blueprints').hidden = tab !== 'blueprints';
+  $('foot-cargo').hidden = tab !== 'cargo';
+  $('foot-blueprints').hidden = tab !== 'blueprints';
+  document.querySelector('.sub').textContent = SUBTITLES[tab] || `Where can I ${mode} this?`;
+  paintStatus();
+  if (tab === 'blueprints') window.bpOpened && window.bpOpened();
+}
+document.querySelector('.tabs').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-tab]');
+  if (b && b.dataset.tab !== activeTab) showTab(b.dataset.tab);
+});
+
+// Used by the Blueprints tab: find a commodity by name and jump to where to buy it.
+function findCommodity(name) {
+  if (!db || !name) return null;
+  const n = norm(name).trim();
+  return db.commodities.find((c) => norm(c.name) === n) || null;
+}
+window.cargo = {
+  status: setTabStatus,
+  canBuy: (name) => { const c = findCommodity(name); return !!(c && db.buy.has(c.id)); },
+  isReady: () => !!db,
+  showBuy: (name) => {
+    const c = findCommodity(name);
+    if (!c) return;
+    mode = 'buy';
+    sort = { key: 'price', dir: MODES.buy.defaultSort };
+    showTab('cargo');
+    select(c);
+  },
+  onReady: []
+};
 document.getElementById('mode').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-mode]');
   if (!b || b.dataset.mode === mode) return;
