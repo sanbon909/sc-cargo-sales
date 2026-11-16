@@ -49,6 +49,10 @@ npm run package:win  # build a portable Windows app into dist/
 
 The UI is plain HTML, CSS and JavaScript in `app/`, with a thin Electron shell in `main.js`.
 
+## What's new
+
+See the [changelog](CHANGELOG.md).
+
 ## Credits
 
 - Market data: [UEX Corp](https://uexcorp.space). Huge thanks to the UEX team and everyone who submits prices.
